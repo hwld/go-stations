@@ -120,6 +120,38 @@ func (h *TODOHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 			http.Error(w, "500 InternalServerError", http.StatusInternalServerError)
 			return
 		}
+	case http.MethodDelete:
+		var request model.DeleteTODORequest
+		if err := json.NewDecoder(r.Body).Decode(&request); err != nil {
+			log.Println(err)
+			http.Error(w, "400 BadRequest", http.StatusBadRequest)
+			return
+		}
+
+		if len(request.IDs) == 0 {
+			http.Error(w, "400 BadRequest", http.StatusBadRequest)
+			return
+		}
+
+		response, err := h.Delete(r.Context(), &request)
+		if err != nil {
+			log.Println(err)
+
+			if _, ok := err.(*model.ErrNotFound); ok {
+				http.Error(w, "404 NotFound", http.StatusNotFound)
+			} else {
+				http.Error(w, "500 InternalServerError", http.StatusInternalServerError)
+			}
+
+			return
+		}
+
+		w.Header().Set("Content-Type", "application/json")
+		if err = json.NewEncoder(w).Encode(response); err != nil {
+			log.Println(err)
+			http.Error(w, "500 InternalServerError", http.StatusInternalServerError)
+			return
+		}
 	}
 }
 
@@ -146,6 +178,7 @@ func (h *TODOHandler) Update(ctx context.Context, req *model.UpdateTODORequest) 
 
 // Delete handles the endpoint that deletes the TODOs.
 func (h *TODOHandler) Delete(ctx context.Context, req *model.DeleteTODORequest) (*model.DeleteTODOResponse, error) {
-	_ = h.svc.DeleteTODO(ctx, nil)
-	return &model.DeleteTODOResponse{}, nil
+	err := h.svc.DeleteTODO(ctx, req.IDs)
+
+	return &model.DeleteTODOResponse{}, err
 }

@@ -141,14 +141,14 @@ func (s *TODOService) DeleteTODO(ctx context.Context, ids []int64) error {
 	if idsCount == 0 {
 		return nil
 	}
-	quer := fmt.Sprintf(deleteFmt, strings.Repeat(",?", idsCount-1))
+	query := fmt.Sprintf(deleteFmt, strings.Repeat(",?", idsCount-1))
 
 	var idSlice []interface{}
 	for _, id := range ids {
 		idSlice = append(idSlice, id)
 	}
 
-	result, err := s.db.ExecContext(ctx, quer, idSlice...)
+	result, err := s.db.ExecContext(ctx, query, idSlice...)
 	if err != nil {
 		return err
 	}
